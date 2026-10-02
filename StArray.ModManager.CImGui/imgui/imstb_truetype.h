@@ -4020,9 +4020,24 @@ STBTT_DEF void stbtt_PackSetSkipMissingCodepoints(stbtt_pack_context *spc, int s
 static void stbtt__h_prefilter(unsigned char *pixels, int w, int h, int stride_in_bytes, unsigned int kernel_width)
 {
    unsigned char buffer[STBTT_MAX_OVERSAMPLE];
-   int safe_w = w - kernel_width;
+   int safe_w;
    int j;
+
+   // 1. Chặn trường hợp chiều rộng/cao không hợp lệ hoặc kernel = 0/1 (không cần filter)
+   if (w <= 0 || h <= 0 || kernel_width <= 1) 
+      return;
+
+   // 2. Giới hạn kernel_width không vượt quá kích thước mảng buffer
+   if (kernel_width > STBTT_MAX_OVERSAMPLE) 
+      kernel_width = STBTT_MAX_OVERSAMPLE;
+
+   // 3. Tránh underflow nếu chiều rộng ảnh nhỏ hơn kích thước kernel
+   if (w < (int)kernel_width) 
+      return;
+
+   safe_w = w - (int)kernel_width;
    STBTT_memset(buffer, 0, STBTT_MAX_OVERSAMPLE); // suppress bogus warning from VS2013 -analyze
+
    for (j=0; j < h; ++j) {
       int i;
       unsigned int total;
@@ -4078,6 +4093,7 @@ static void stbtt__h_prefilter(unsigned char *pixels, int w, int h, int stride_i
       pixels += stride_in_bytes;
    }
 }
+
 
 static void stbtt__v_prefilter(unsigned char *pixels, int w, int h, int stride_in_bytes, unsigned int kernel_width)
 {
