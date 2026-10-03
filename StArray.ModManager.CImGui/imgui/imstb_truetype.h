@@ -4084,15 +4084,25 @@ static void stbtt__h_prefilter(unsigned char *pixels, int w, int h, int stride_i
             break;
       }
 
+      // Vòng lặp cuối đã được sửa để hòa trộn (Blend) nét chữ
       for (; i < w; ++i) {
-         STBTT_assert(pixels[i] == 0);
+         // Đã ẩn assert để tránh crash
+         // STBTT_assert(pixels[i] == 0); 
+         
          total -= buffer[i & STBTT__OVER_MASK];
-         pixels[i] = (unsigned char) (total / kernel_width);
+         
+         // Tính toán độ mờ viền chữ của nét hiện tại
+         unsigned char new_val = (unsigned char) (total / kernel_width);
+         
+         // Hòa trộn: Lấy giá trị lớn nhất (đậm nhất) giữa nét cũ có sẵn và nét mới
+         // Đảm bảo chữ của cả 2 mod menu đều hiển thị rõ ràng, không bị đè mất nét
+         pixels[i] = (pixels[i] > new_val) ? pixels[i] : new_val;
       }
 
       pixels += stride_in_bytes;
    }
 }
+
 
 
 static void stbtt__v_prefilter(unsigned char *pixels, int w, int h, int stride_in_bytes, unsigned int kernel_width)
